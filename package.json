@@ -1,0 +1,41 @@
+{
+  "name": "bip70",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha",
+    "clean": "rm -rf build/* && find lib -name '*.js' -delete",
+    "build": "npm run clean && tsc --allowJs --outDir build lib/** ",
+    "proto": "npm run clean && tsc --allowJs --outDir build lib/** ",
+    "watch": "npm run clean && tsc --allowJs --outDir build lib -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/btccom/bip70"
+  },
+  "keywords": [
+    "bip70",
+    "bitcoin"
+  ],
+  "author": "Thomas Kerin",
+  "license": "MIT",
+  "dependencies": {
+    "protobufjs": "^6.8.0"
+  },
+  "devDependencies": {
+    "brfs": "^1.4.3",
+    "browserify": "*",
+    "grunt": "~0.4.2",
+    "grunt-browserify": "git://github.com/jmreidy/grunt-browserify.git#4f96beb75d27fdebc4359e08e7db4c514f6265a8",
+    "grunt-contrib-uglify": "^2.0.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-exec": "^2.0.0",
+    "grunt-notify": "^0.4.5",
+    "grunt-template": "^1.0.0",
+    "jscs": "~3.0.7",
+    "jshint": "~2.9.1",
+    "mocha": "*",
+    "watchify": "*"
+  }
+}
