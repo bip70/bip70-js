@@ -12,7 +12,7 @@ var encodeAndDecode = function(details) {
 
 describe('RequestBuilder setters', function() {
     it('sets the network and time', function(cb) {
-        var network = "mainnet";
+        var network = "main";
         var now = new Date().getTime();
         var builder = new RequestBuilder();
         builder.setNetwork(network);
@@ -154,7 +154,7 @@ describe('RequestBuilder setters', function() {
             amount: 1,
             script: Buffer.from('ascii')
         };
-        var network = "mainnet";
+        var network = "main";
 
         var builder = new RequestBuilder();
         builder.setTime(time);
@@ -185,7 +185,7 @@ describe('RequestBuilder setters', function() {
             amount: 1,
             script: Buffer.from('ascii')
         };
-        var network = "mainnet";
+        var network = "main";
 
         var builder = new RequestBuilder();
         builder.setTime(time);
