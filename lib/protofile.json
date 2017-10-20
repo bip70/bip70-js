@@ -42,11 +42,11 @@
           "type": "string",
           "id": 5
         },
-        "paymentUrl": {
+        "payment_url": {
           "type": "string",
           "id": 6
         },
-        "merchantData": {
+        "merchant_data": {
           "type": "bytes",
           "id": 7
         }
@@ -85,7 +85,7 @@
     },
     "Payment": {
       "fields": {
-        "merchantData": {
+        "merchant_data": {
           "type": "bytes",
           "id": 1
         },

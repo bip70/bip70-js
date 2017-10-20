@@ -82,7 +82,7 @@ module.exports = function(grunt) {
             },
             browserify_test : {
                 files : ['main.js', 'test.js', 'test/*', 'test/**/*', 'lib/*', 'lib/**/*', '!test/run-tests.html'],
-                tasks : ['browserify:test']
+                tasks : ['browserify:test', 'uglify:test', 'template']
             }
         },
 
@@ -112,6 +112,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-notify');
     grunt.loadNpmTasks('grunt-template');
 
-    grunt.registerTask('build', ['exec:build_proto', 'browserify', 'uglify', 'template']);
+    grunt.registerTask('build', ['exec:build_proto', 'browserify', 'uglify:bip70', 'uglify:test', 'template']);
     grunt.registerTask('default', ['build']);
 };
