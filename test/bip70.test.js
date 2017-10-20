@@ -4,38 +4,60 @@ var bip70 = require('../main.js');
 var assert = require('assert');
 var RequestBuilder = bip70.RequestBuilder;
 var ProtoBuf = bip70.ProtoBuf;
+var PaymentDetails = ProtoBuf.PaymentDetails;
+
+var encodeAndDecode = function(details) {
+    return PaymentDetails.decode(PaymentDetails.encode(details).finish());
+};
 //var mocha = require('mocha');
 
-describe('RequestBuilder', function() {
-    it('sets the network', function(cb) {
+describe('RequestBuilder setters', function() {
+    it('sets the network and time', function(cb) {
         var network = "mainnet";
+        var now = new Date().getTime();
         var builder = new RequestBuilder();
         builder.setNetwork(network);
-        assert.equal(builder.network, network);
+        builder.setTime(now);
+
+        var test = function(builder) {
+            assert.equal(builder.network, network);
+            assert.equal(builder.time, now);
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
         cb();
     });
 
     it('sets the memo', function(cb) {
         var memo = "thanks from btc.com";
+        var now = new Date().getTime();
         var builder = new RequestBuilder();
         builder.setMemo(memo);
-        assert.equal(builder.memo, memo);
-        cb();
-    });
+        builder.setTime(now);
 
-    it('sets the time', function(cb) {
-        var time = new Date().getTime();
-        var builder = new RequestBuilder();
-        builder.setTime(time);
-        assert.equal(builder.time, time);
+        var test = function(builder) {
+            assert.equal(builder.memo, memo);
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
         cb();
     });
 
     it('sets the expire time', function(cb) {
+        var now = new Date().getTime();
         var expireTime = new Date().getTime();
         var builder = new RequestBuilder();
         builder.setExpires(expireTime);
-        assert.equal(builder.expires, expireTime);
+        builder.setTime(now);
+
+        var test = function(builder) {
+            assert.equal(builder.expires, expireTime);
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
         cb();
     });
 
@@ -43,7 +65,14 @@ describe('RequestBuilder', function() {
         var paymentUrl = "https://webstore.com/payments?id=correcthorsebatterystaple-ie-random";
         var builder = new RequestBuilder();
         builder.setPaymentUrl(paymentUrl);
-        assert.equal(builder.payment_url, paymentUrl);
+        builder.setTime(new Date().getTime());
+
+        var test = function(builder) {
+            assert.equal(builder.paymentUrl, paymentUrl);
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
         cb();
     });
 
@@ -51,7 +80,15 @@ describe('RequestBuilder', function() {
         var merchantData = "4cf6403a-b5a3-11e7-abc4-cec278b6b50a\n";
         var builder = new RequestBuilder();
         builder.setMerchantData(merchantData);
-        assert.equal(builder.merchant_data, merchantData);
+        builder.setTime(new Date().getTime());
+        assert.equal(builder.merchantData, merchantData);
+
+        var test = function(builder) {
+
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
         cb();
     });
 
@@ -63,10 +100,17 @@ describe('RequestBuilder', function() {
 
         var builder = new RequestBuilder();
         builder.addOutput(txOut);
+        builder.setTime(new Date().getTime());
 
-        assert.equal(1, builder.outputs.length);
-        assert.equal(builder.outputs[0].amount, txOut.amount);
-        assert.equal(builder.outputs[0].script.toString('hex'), txOut.script.toString('hex'));
+        var test = function(builder) {
+            assert.equal(1, builder.outputs.length);
+            assert.equal(builder.outputs[0].amount, txOut.amount);
+            assert.equal(builder.outputs[0].script.toString('hex'), txOut.script.toString('hex'));
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
+
         cb();
     });
 
@@ -81,13 +125,19 @@ describe('RequestBuilder', function() {
         };
         var builder = new RequestBuilder();
         builder.setOutputs([txOut1, txOut2]);
+        builder.setTime(new Date().getTime());
 
-        assert.equal(2, builder.outputs.length);
-        assert.equal(builder.outputs[0].amount, txOut1.amount);
-        assert.equal(builder.outputs[0].script.toString('hex'), txOut1.script.toString('hex'));
+        var test = function(builder) {
+            assert.equal(2, builder.outputs.length);
+            assert.equal(builder.outputs[0].amount, txOut1.amount);
+            assert.equal(builder.outputs[0].script.toString('hex'), txOut1.script.toString('hex'));
 
-        assert.equal(builder.outputs[1].amount, txOut2.amount);
-        assert.equal(builder.outputs[1].script.toString('hex'), txOut2.script.toString('hex'));
+            assert.equal(builder.outputs[1].amount, txOut2.amount);
+            assert.equal(builder.outputs[1].script.toString('hex'), txOut2.script.toString('hex'));
+        };
+
+        test(builder);
+        test(encodeAndDecode(builder));
 
         cb();
     });
@@ -107,16 +157,17 @@ describe('RequestBuilder', function() {
         builder.setNetwork(network);
         builder.addOutput(txOut);
 
-        var details = builder.buildDetails();
+        var test = function(builder) {
+            assert.equal(builder.time, time);
+            assert.equal(builder.network, network);
+            assert.equal(builder.outputs[0].amount, txOut.amount);
+            assert.equal(builder.outputs[0].script.toString('binary'), txOut.script.toString('binary'));
+        };
 
-        assert.equal(details.time, time);
-        assert.equal(details.network, network);
-        assert.equal(details.outputs[0].amount, txOut.amount);
-        assert.equal(details.outputs[0].script, txOut.script.toString('binary'));
+        test(builder);
+        test(builder.buildDetails());
+        test(encodeAndDecode(builder));
 
-        var encoded = ProtoBuf.PaymentDetails.encode(details).finish();
-        var decoded = ProtoBuf.PaymentDetails.decode(encoded);
-        console.log(decoded);
         cb();
     });
 
@@ -142,4 +193,5 @@ describe('RequestBuilder', function() {
 
         cb();
     });
+
 });
