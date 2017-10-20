@@ -1,4 +1,5 @@
 exports = module.exports = {
     bip70: require('./'),
-    bip70Test: require('./test/bip70.test')
+    requestBuilderTest: require('./test/request_builder.test'),
+    protobufTest: require('./test/protobuf.test')
 };

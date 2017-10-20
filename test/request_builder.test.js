@@ -9,7 +9,6 @@ var PaymentDetails = ProtoBuf.PaymentDetails;
 var encodeAndDecode = function(details) {
     return PaymentDetails.decode(PaymentDetails.encode(details).finish());
 };
-//var mocha = require('mocha');
 
 describe('RequestBuilder setters', function() {
     it('sets the network and time', function(cb) {
@@ -77,25 +76,26 @@ describe('RequestBuilder setters', function() {
     });
 
     it('sets merchant data', function(cb) {
-        var merchantData = "4cf6403a-b5a3-11e7-abc4-cec278b6b50a\n";
+        var merchantData = new Buffer("4cf6403a-b5a3-11e7-abc4-cec278b6b50a");
         var builder = new RequestBuilder();
         builder.setMerchantData(merchantData);
         builder.setTime(new Date().getTime());
-        assert.equal(builder.merchantData, merchantData);
 
         var test = function(builder) {
-
+            var m = Buffer.from(builder.merchantData);
+            assert.equal(m.toString('hex'), merchantData.toString('hex'));
         };
 
         test(builder);
         test(encodeAndDecode(builder));
+        console.log("FIN")
         cb();
     });
 
     it('sets an output', function(cb) {
         var txOut = {
             amount: 1,
-            script: Buffer.from('', 'hex')
+            script: Buffer.from('42', 'hex')
         };
 
         var builder = new RequestBuilder();
@@ -104,8 +104,12 @@ describe('RequestBuilder setters', function() {
 
         var test = function(builder) {
             assert.equal(1, builder.outputs.length);
-            assert.equal(builder.outputs[0].amount, txOut.amount);
-            assert.equal(builder.outputs[0].script.toString('hex'), txOut.script.toString('hex'));
+
+            var out = builder.outputs[0];
+            assert.equal(out.amount, txOut.amount);
+
+            var outScript = Buffer.from(out.script);
+            assert.equal(outScript.toString('hex'), txOut.script.toString('hex'));
         };
 
         test(builder);
@@ -161,7 +165,9 @@ describe('RequestBuilder setters', function() {
             assert.equal(builder.time, time);
             assert.equal(builder.network, network);
             assert.equal(builder.outputs[0].amount, txOut.amount);
-            assert.equal(builder.outputs[0].script.toString('binary'), txOut.script.toString('binary'));
+
+            var script = Buffer.from(builder.outputs[0].script);
+            assert.equal(script.toString('binary'), txOut.script.toString('binary'));
         };
 
         test(builder);
@@ -193,5 +199,4 @@ describe('RequestBuilder setters', function() {
 
         cb();
     });
-
 });
