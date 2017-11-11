@@ -1,3 +1,4 @@
+
 /* jshint -W101, -W098 */
 
 var bip70 = require('../main.js');
@@ -5,6 +6,7 @@ var assert = require('assert');
 var ProtoBuf = bip70.ProtoBuf;
 var PaymentDetails = ProtoBuf.PaymentDetails;
 var PaymentRequest = ProtoBuf.PaymentRequest;
+var X509Certificates = ProtoBuf.X509Certificates;
 
 describe('Protobuf', function() {
     it('parses a static PaymentRequest', function(cb) {
@@ -33,6 +35,10 @@ describe('Protobuf', function() {
         var m = Buffer.from(paymentDetails.merchantData);
         assert.equal(m.toString('hex'), merchantData.toString('hex'));
 
+        var x509 = X509Certificates.decode(paymentRequest.pkiData);
+        assert.equal(x509.certificate.length, 2);
+
         cb();
     })
+
 });
