@@ -1,129 +1,111 @@
-var asn1js = require('asn1js');
+var jsrsasign = require('jsrsasign');
 var assert = require('assert');
-var ProtoBuf = require('../../lib/protobuf');
-var TrustStore = require('../../lib/x509/truststore');
-var X509Certificates = ProtoBuf.X509Certificates;
-var Certificate = require('pkijs').Certificate;
-var CertificateChainValidationEngine = require('pkijs').CertificateChainValidationEngine;
-var Validator = require('../../lib/x509/validation.pkijs');
-
+var Validation = require('../../lib/x509/validation.jsrsasign');
 var certfile = require("./certfile");
 
-describe('Validation', function() {
-    var certSelfSigned64 = 'MIIDCjCCAfKgAwIBAgIJAPfHe1r84gY8MA0GCSqGSIb3DQEBCwUAMBoxGDAWBgNV\n' +
-        'BAMMD0JJUDcwIHRlc3QgY2FzZTAeFw0xNzEwMjgxOTQ4MDhaFw0xODEwMjgxOTQ4\n' +
-        'MDhaMBoxGDAWBgNVBAMMD0JJUDcwIHRlc3QgY2FzZTCCASIwDQYJKoZIhvcNAQEB\n' +
-        'BQADggEPADCCAQoCggEBAKzsGo3E26GKAI9YWHxIykJTSdake20WGZBCr94KydV8\n' +
-        '2DERn+20u6dTPN838m1U6dXioWRAu1el3XwybYEyOBI4cZwteG83LZMSWuH5/85p\n' +
-        'l5FWsQjzO/wz4fPY2og4B8H0F95BrDCr2W1vaRSMB5Prt2n0MPjvYVDTF7vKOFNC\n' +
-        'uigGoqRX2bRnuA4wsT6YPK8gCX74SLZRgrohRga9ZREsDEHjon7YoM81deDF5Ajm\n' +
-        'b/keOx7V0I/7LTHg5r6+EjR/IbFsZT2QlD9IBfpC2Tznizkd+xszZrYIhFmINxmQ\n' +
-        'DLTFOnWPzjy5hu5gX9cXHH3xReDrFLiSQkM5mLLkS00CAwEAAaNTMFEwHQYDVR0O\n' +
-        'BBYEFHH2DkuFgA1TyDivdN4xGdibx+/pMB8GA1UdIwQYMBaAFHH2DkuFgA1TyDiv\n' +
-        'dN4xGdibx+/pMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAKM2\n' +
-        'CkqnOTGtpE78sAB1QrRjrcUY9sj3hylTDbBOBg5IIrNk7HVhy6odgw3/xTnPnka+\n' +
-        '6YMxZ3S7Uv6lss1NVVvxMChrSZjbaRg91Ci44QnANgqGQ4O+jwXbR+cEVla2miPG\n' +
-        'lV4oOKEr7tGSGU2j90x2mHpVwZfb6WlqY47qPYKD8sF44mC5kvpnZLSCm2WCsJIU\n' +
-        'DcUo4qsZ54l7phZFRaSEOHwOeeyQN8q78BZd1Brr+qS3laVrH44dXHLKeh/qzlUn\n' +
-        'mkgjF1R8AgJhcjM6U4xR+WeY6AQKdt5imHVyeHDay0ZHi+e6rUwkFj9mbbaZwIsT\n' +
-        '2XXjwmZziZA+LeCLPvY=';
 
-    it('selfsigned', function(cb) {
-        var der = Buffer.from(certSelfSigned64, "base64");
-        var decodeAsn1 = asn1js.fromBER(Validator.stringToArrayBuffer(der));
-        assert.notEqual(-1, decodeAsn1.offset);
+function addDays(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
 
-        var cert = new Certificate({schema: decodeAsn1.result});
-        var validator = new Validator();
-        var x509 = X509Certificates.create({
-            certificate: [der]
-        });
+function subDays(date, days) {
+    var result = new Date(date);
+    result.setDate(result.getDate() - days);
+    return result;
+}
 
-        validator
-            .validateCertificateChain(x509, {trustedCerts: [cert]})
-            .then(function(a) {
-                console.log(a);
-                console.log("success");
-                cb();
-            }, function(err) {
-                console.log("error");
-                console.log(err);
-                cb();
-            });
+function certFromEncoding(data, encoding) {
+    var b = Buffer.from(data, encoding);
+    var cert = new jsrsasign.X509();
+    cert.readCertHex(b.toString('hex'));
+    return cert;
+}
+
+describe('ChainPathBuilder', function() {
+    var fixture = certfile.test_cert;
+    var entityCert = certFromEncoding(fixture.entityCertificate, "base64");
+    var rootCert = certFromEncoding(fixture.rootCertificate, "base64");
+    var intermediates = fixture.intermediates.map(function(base64) {
+        return certFromEncoding(base64, "base64");
+    });
+    var chainValidTime = fixture.chainValidTime;
+
+    it('builds a valid certificate chain', function(cb) {
+        var numCerts = 2 + intermediates.length;
+        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var path = builder.shortestPathToTarget(entityCert, intermediates);
+
+        assert.equal(path.length, numCerts, "expecting " + numCerts + " certificates in total for path");
+
+        var validator = new Validation.ChainPathValidator({
+            currentTime: chainValidTime
+        }, path);
+
+        validator.validate();
+
+        cb();
     });
 
-    function base64ToCert(b64) {
-        var buf = Buffer.from(b64, "base64");
-        var asn1 = asn1js.fromBER(Validator.stringToArrayBuffer(buf));
-        if (asn1.offset === -1) {
-            throw new Error("Failed to decode certificate DER");
+    function testCertificateValidity(now) {
+        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var path = builder.shortestPathToTarget(entityCert, intermediates);
+        assert.equal(path.length, 3, "expecting 3 certificates in total for path");
+
+        var validator = new Validation.ChainPathValidator({
+            currentTime: now
+        }, path);
+
+        var err;
+        try {
+            validator.validate();
+        } catch (e) {
+            err = e;
         }
-        var cert = new Certificate({schema: asn1.result});
-        return {
-            der: buf,
-            asn1: asn1,
-            cert: cert
-        }
+
+        assert.ok(typeof err === "object");
+        assert.equal(err.message, "Certificate is not valid");
     }
 
-    it('builds', function(cb) {
-        var fixture = certfile.test_cert;
-        var entity = base64ToCert(fixture.entityCertificate);
-        var root = base64ToCert(fixture.rootCertificate);
-        var intermediates = fixture.intermediates.map(base64ToCert);
-
-        var certs = [entity.cert];
-        certs = certs.concat(intermediates.map(function(v) { return v.cert; }));
-
-        var chainVerification = new CertificateChainValidationEngine({
-            certs: certs,
-            trustedCerts: [root.cert]
+    [rootCert].concat(intermediates).concat(entityCert).map(function(cert, i) {
+        it('rejects if `now` is after #' + i + ' certs `notAfter`', function(cb) {
+            // this timestamp conflicts with the root certificates notBefore
+            var now = jsrsasign.zulutodate(cert.getNotAfter());
+            now = addDays(now, 2);
+            testCertificateValidity(now);
+            cb();
         });
 
-        chainVerification.verify()
-            .then(function(a) {
-                console.log(a);
-                cb();
-            }, function(e) {
-                console.log(e);
-                cb();
-            });
-    })
-
-    it('signedbyintermediate', function(cb) {
-        var fixture = certfile.pkijs;
-        var entityCert = Buffer.from(fixture.entityCertificate, "base64");
-        var rootCert = Buffer.from(fixture.rootCertificate, "base64");
-        var intermediates = fixture.intermediates.map(function(base64) {
-            return Buffer.from(base64, "base64");
+        it('rejects if `now` is before #' + i + ' certs `notBefore`', function(cb) {
+            // this timestamp conflicts with the root certificates notBefore
+            var now = jsrsasign.zulutodate(rootCert.getNotBefore());
+            now = subDays(now, 2);
+            testCertificateValidity(now);
+            cb();
         });
+    });
 
-        var decodeAsn1 = asn1js.fromBER(Validator.stringToArrayBuffer(rootCert));
-        assert.notEqual(-1, decodeAsn1.offset);
+    function testNoCertificationPath(trusted, intermediate, end) {
+        var err;
+        try {
+            var builder = new Validation.ChainPathBuilder(trusted);
+            builder.shortestPathToTarget(end, intermediate);
+        } catch (e) {
+            err = e;
+        }
 
-        var trustRoot = new Certificate({schema: decodeAsn1.result});
+        assert.equal(typeof err, "object");
+        assert.equal(err.message, "No certificate paths found");
+    }
 
-        var opt = {
-            trustedCerts: [trustRoot]
-        };
+    it('errors if intermediate certificate is missing', function(cb) {
+        testNoCertificationPath([rootCert], [], entityCert);
+        cb();
+    });
 
-        var certs = [];
-        certs.push(entityCert);
-        certs = certs.concat(intermediates);
-        var x509 = X509Certificates.create({
-            certificate: certs
-        });
-
-        new Validator()
-            .validateCertificateChain(x509, opt)
-            .then(function(a) {
-                console.log("success");
-                console.log(a);
-                cb();
-            }, function(err) {
-                console.log("error");
-                console.log(err);
-                cb();
-            });
-    })
+    it('errors if root certificate is missing', function(cb) {
+        testNoCertificationPath([], intermediates, entityCert);
+        cb();
+    });
 });

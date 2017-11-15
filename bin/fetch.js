@@ -14,7 +14,7 @@ var validator = new Validation.RequestValidator(opts);
 var client = new HttpClient(validator);
 
 client
-    .getRequest(url)
+    .getRequest(url, validator)
     .then(function(response) {
         console.log(response)
     }, function(error) {
