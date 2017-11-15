@@ -1,12 +1,16 @@
 var HttpClient = require('../lib/client');
-var X509Validator = require('../lib/x509/validation.pkijs');
+var Validation = require('../lib/x509/validation.jsrsasign');
+var TrustStore = require('../lib/x509/truststore');
 
 if (process.argv.length < 3) {
     throw new Error("Expecting a url as an argument");
 }
 
 var url = process.argv[2];
-var validator = new X509Validator();
+var opts = {
+    trustStore: TrustStore
+};
+var validator = new Validation.RequestValidator(opts);
 var client = new HttpClient(validator);
 
 client
