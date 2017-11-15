@@ -1,5 +1,5 @@
 {
-  "name": "bip70",
+  "name": "bip70-js",
   "version": "1.0.1",
   "description": "",
   "main": "main.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com/btccom/bip70"
+    "url": "github.com/bip70/bip70-js"
   },
   "keywords": [
     "bip70",
