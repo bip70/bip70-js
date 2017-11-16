@@ -1,5 +1,7 @@
-var HttpClient = require('../lib/client');
-var Validation = require('../lib/x509/validation.jsrsasign');
+var bip70 = require('../main');
+var ProtoBuf = bip70.ProtoBuf;
+var HttpClient = bip70.HttpClient;
+var RequestValidator = bip70.X509.Validation.RequestValidator;
 var TrustStore = require('../lib/x509/truststore');
 
 if (process.argv.length < 3) {
@@ -10,13 +12,19 @@ var url = process.argv[2];
 var opts = {
     trustStore: TrustStore
 };
-var validator = new Validation.RequestValidator(opts);
+var validator = new RequestValidator(opts);
 var client = new HttpClient(validator);
 
 client
     .getRequest(url, validator)
-    .then(function(response) {
-        console.log(response)
+    .then(function(paymentRequest) {
+        console.log(paymentRequest);
+        var details = ProtoBuf.PaymentDetails.decode(paymentRequest.serializedPaymentDetails);
+
+        details.outputs.map(function (output,i) {
+            console.log(" * ", i, " [value: "+output.amount+", script: ", output.script.toString('hex'))
+        });
+
     }, function(error) {
         console.log(error);
     });
