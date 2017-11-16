@@ -1,5 +1,8 @@
 var jsrsasign = require('jsrsasign');
 var assert = require('assert');
+var bip70 = require('../../lib');
+var ChainPathValidator = bip70.X509.ChainPathValidator;
+var ChainPathBuilder = bip70.X509.ChainPathBuilder;
 var Validation = require('../../lib/x509/validation.jsrsasign');
 var certfile = require("./certfile");
 
@@ -34,12 +37,12 @@ describe('ChainPathBuilder', function() {
 
     it('builds a valid certificate chain', function(cb) {
         var numCerts = 2 + intermediates.length;
-        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var builder = new ChainPathBuilder([rootCert]);
         var path = builder.shortestPathToTarget(entityCert, intermediates);
 
         assert.equal(path.length, numCerts, "expecting " + numCerts + " certificates in total for path");
 
-        var validator = new Validation.ChainPathValidator({
+        var validator = new ChainPathValidator({
             currentTime: chainValidTime
         }, path);
 
@@ -49,11 +52,11 @@ describe('ChainPathBuilder', function() {
     });
 
     function testCertificateValidity(now) {
-        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var builder = new ChainPathBuilder([rootCert]);
         var path = builder.shortestPathToTarget(entityCert, intermediates);
         assert.equal(path.length, 3, "expecting 3 certificates in total for path");
 
-        var validator = new Validation.ChainPathValidator({
+        var validator = new ChainPathValidator({
             currentTime: now
         }, path);
 
@@ -89,7 +92,7 @@ describe('ChainPathBuilder', function() {
     function testNoCertificationPath(trusted, intermediate, end) {
         var err;
         try {
-            var builder = new Validation.ChainPathBuilder(trusted);
+            var builder = new ChainPathBuilder(trusted);
             builder.shortestPathToTarget(end, intermediate);
         } catch (e) {
             err = e;

@@ -5,10 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "mocha",
-    "clean": "rm -rf build/* && find lib -name '*.js' -delete",
-    "build": "npm run clean && tsc --allowJs --outDir build lib/** ",
-    "proto": "npm run clean && tsc --allowJs --outDir build lib/** ",
-    "watch": "npm run clean && tsc --allowJs --outDir build lib -w"
+    "clean": "rm -rf build/* && find lib -name '*.js' -delete"
   },
   "repository": {
     "type": "git",
@@ -30,8 +27,10 @@
     "browserify": "*",
     "grunt": "~0.4.2",
     "grunt-browserify": "git://github.com/jmreidy/grunt-browserify.git#4f96beb75d27fdebc4359e08e7db4c514f6265a8",
+    "grunt-contrib-connect": "^0.7.1",
     "grunt-contrib-uglify": "^2.0.0",
     "grunt-contrib-watch": "~0.6.1",
+    "grunt-saucelabs": "git://github.com/blocktrail/grunt-saucelabs.git#92615f964444a7f304bfee41cb13627b0457f85d",
     "grunt-exec": "^2.0.0",
     "grunt-notify": "^0.4.5",
     "grunt-template": "^1.0.0",
