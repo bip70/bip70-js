@@ -605,6 +605,7 @@ module.exports = store;
 
 }).call(this,require("buffer").Buffer)
 },{"./ca-certificates.json":7,"buffer":50,"jsrsasign":53}],11:[function(require,module,exports){
+(function (Buffer){
 var jsrsasign = require('jsrsasign');
 var ProtoBuf = require('../protobuf');
 var PKIType = require('./pkitype');
@@ -884,6 +885,7 @@ ChainPathValidator.prototype.validate = function() {
         var cert = this._certificates[i];
         processCertificate(state, cert);
         if (!state.isFinal()) {
+
             state.updateState(cert)
         }
     }
@@ -902,7 +904,7 @@ RequestValidator.prototype.verifyX509Details = function(paymentRequest) {
 
     function certFromDER(derBuf) {
         var cert = new jsrsasign.X509();
-        cert.readCertHex(derBuf.toString('hex'));
+        cert.readCertHex(new Buffer(derBuf).toString('hex'));
         return cert;
     }
 
@@ -942,23 +944,25 @@ RequestValidator.prototype.validateSignature = function(request, entityCert) {
         hashAlg = "SHA256";
     }
 
+    var dataSigned = getDataToSign(request).toString('hex');
+    var dataSignature = Buffer.from(request.signature).toString('hex');
     var sigAlg = hashAlg + "with" + keyType;
     var sig = new jsrsasign.Signature({alg: sigAlg});
     sig.init(publicKey);
-    sig.updateHex(getDataToSign(request).toString('hex'));
-    return sig.verify(request.signature.toString('hex'));
+    sig.updateHex(dataSigned);
+    return sig.verify(dataSignature);
 };
 
 function getDataToSign(request) {
     if (request.signature) {
         var tmp = request.signature;
         request.signature = '';
-        var encoded = ProtoBuf.PaymentRequest.encode(request).finish();
+        var encoded = new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
         request.signature = tmp;
         return encoded;
     }
 
-    return ProtoBuf.PaymentRequest.encode(request).finish();
+    return new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
 }
 
 module.exports = {
@@ -967,10 +971,11 @@ module.exports = {
     RequestValidator: RequestValidator
 };
 
-},{"../protobuf":4,"./pkitype":9,"jsrsasign":53}],12:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"../protobuf":4,"./pkitype":9,"buffer":50,"jsrsasign":53}],12:[function(require,module,exports){
 var Bip70 = require("./lib/bip70.js");
 
-module.exports = Bip70;
+exports = module.exports = Bip70;
 
 },{"./lib/bip70.js":1}],13:[function(require,module,exports){
 "use strict";
@@ -14686,6 +14691,9 @@ module.exports={
 (function (Buffer){
 var jsrsasign = require('jsrsasign');
 var assert = require('assert');
+var bip70 = require('../../main.js');
+var ChainPathValidator = bip70.X509.ChainPathValidator;
+var ChainPathBuilder = bip70.X509.ChainPathBuilder;
 var Validation = require('../../lib/x509/validation.jsrsasign');
 var certfile = require("./certfile");
 
@@ -14720,12 +14728,12 @@ describe('ChainPathBuilder', function() {
 
     it('builds a valid certificate chain', function(cb) {
         var numCerts = 2 + intermediates.length;
-        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var builder = new ChainPathBuilder([rootCert]);
         var path = builder.shortestPathToTarget(entityCert, intermediates);
 
         assert.equal(path.length, numCerts, "expecting " + numCerts + " certificates in total for path");
 
-        var validator = new Validation.ChainPathValidator({
+        var validator = new ChainPathValidator({
             currentTime: chainValidTime
         }, path);
 
@@ -14735,11 +14743,11 @@ describe('ChainPathBuilder', function() {
     });
 
     function testCertificateValidity(now) {
-        var builder = new Validation.ChainPathBuilder([rootCert]);
+        var builder = new ChainPathBuilder([rootCert]);
         var path = builder.shortestPathToTarget(entityCert, intermediates);
         assert.equal(path.length, 3, "expecting 3 certificates in total for path");
 
-        var validator = new Validation.ChainPathValidator({
+        var validator = new ChainPathValidator({
             currentTime: now
         }, path);
 
@@ -14775,7 +14783,7 @@ describe('ChainPathBuilder', function() {
     function testNoCertificationPath(trusted, intermediate, end) {
         var err;
         try {
-            var builder = new Validation.ChainPathBuilder(trusted);
+            var builder = new ChainPathBuilder(trusted);
             builder.shortestPathToTarget(end, intermediate);
         } catch (e) {
             err = e;
@@ -14797,5 +14805,5 @@ describe('ChainPathBuilder', function() {
 });
 
 }).call(this,require("buffer").Buffer)
-},{"../../lib/x509/validation.jsrsasign":11,"./certfile":96,"assert":23,"buffer":50,"jsrsasign":53}]},{},[92])(92)
+},{"../../lib/x509/validation.jsrsasign":11,"../../main.js":12,"./certfile":96,"assert":23,"buffer":50,"jsrsasign":53}]},{},[92])(92)
 });

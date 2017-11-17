@@ -1,6 +1,6 @@
 var jsrsasign = require('jsrsasign');
 var assert = require('assert');
-var bip70 = require('../../lib');
+var bip70 = require('../../main.js');
 var ChainPathValidator = bip70.X509.ChainPathValidator;
 var ChainPathBuilder = bip70.X509.ChainPathBuilder;
 var Validation = require('../../lib/x509/validation.jsrsasign');
