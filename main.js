@@ -1,3 +1,3 @@
 var Bip70 = require("./lib/bip70.js");
 
-module.exports = Bip70;
+exports = module.exports = Bip70;
