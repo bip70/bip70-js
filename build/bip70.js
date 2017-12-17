@@ -891,11 +891,11 @@ ChainPathValidator.prototype.validate = function() {
 };
 
 var RequestValidator = function(opts) {
-    var trustStore = [];
-    if (opts) {
-        trustStore = opts.trustStore ? opts.trustStore : [];
+    if (typeof opts === "undefined") {
+        opts = {};
     }
-    this.trustStore = trustStore;
+    opts.trustStore = opts.trustStore ? opts.trustStore : [];
+    this.opts = opts;
 };
 
 RequestValidator.prototype.verifyX509Details = function(paymentRequest) {
@@ -919,9 +919,9 @@ RequestValidator.prototype.verifyX509Details = function(paymentRequest) {
 };
 
 RequestValidator.prototype.validateCertificateChain = function(entityCert, intermediates) {
-    var builder = new ChainPathBuilder(this.trustStore);
+    var builder = new ChainPathBuilder(this.opts.trustStore);
     var path = builder.shortestPathToTarget(entityCert, intermediates);
-    var validator = new ChainPathValidator({}, path);
+    var validator = new ChainPathValidator(this.opts, path);
     validator.validate();
     return path;
 };
@@ -934,15 +934,11 @@ RequestValidator.prototype.validateSignature = function(request, entityCert) {
 };
 
 function getDataToSign(request) {
-    if (request.signature) {
-        var tmp = request.signature;
-        request.signature = '';
-        var encoded = new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
-        request.signature = tmp;
-        return encoded;
-    }
-
-    return new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
+    var tmp = request.signature;
+    request.signature = '';
+    var encoded = new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
+    request.signature = tmp;
+    return encoded;
 }
 
 function getSignatureAlgorithm(entityCert, pkiType) {
