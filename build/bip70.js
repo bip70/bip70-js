@@ -618,7 +618,7 @@ var X509Certificates = ProtoBuf.X509Certificates;
  * @returns {boolean}
  */
 function hasEqualSerialNumber(certA, certB) {
-    return certA.getSerialNumberHex() === certB.getSerialNumberHex()
+    return certA.getSerialNumberHex() === certB.getSerialNumberHex();
 }
 
 /**
@@ -628,7 +628,7 @@ function hasEqualSerialNumber(certA, certB) {
  * @returns {boolean}
  */
 function hasEqualSubject(certA, certB) {
-    return certA.getSubjectHex() === certB.getSubjectHex()
+    return certA.getSubjectHex() === certB.getSubjectHex();
 }
 
 /**
@@ -638,7 +638,7 @@ function hasEqualSubject(certA, certB) {
  * @returns {boolean}
  */
 function hasEqualPublicKey(certA, certB) {
-    return certA.getPublicKeyHex() === certB.getPublicKeyHex()
+    return certA.getPublicKeyHex() === certB.getPublicKeyHex();
 }
 
 /**
@@ -648,9 +648,9 @@ function hasEqualPublicKey(certA, certB) {
  * @returns {boolean}
  */
 function checkCertsEqual(certA, certB) {
-    return hasEqualSerialNumber(certA, certB)
-        && hasEqualSubject(certA, certB)
-        && hasEqualPublicKey(certA, certB);
+    return hasEqualSerialNumber(certA, certB) &&
+        hasEqualSubject(certA, certB) &&
+        hasEqualPublicKey(certA, certB);
 }
 
 /**
@@ -694,7 +694,7 @@ function findIssuers(target, bundle) {
             return bundle
                 .filter(makeFilterBySubjectKey(authorityKeyIdentifier.kid))
                 .filter(function(issuerCert) {
-                    return issuerName === issuerCert.getSubjectString()
+                    return issuerName === issuerCert.getSubjectString();
                 });
         }
     } catch (e) { }
@@ -885,8 +885,7 @@ ChainPathValidator.prototype.validate = function() {
         var cert = this._certificates[i];
         processCertificate(state, cert);
         if (!state.isFinal()) {
-
-            state.updateState(cert)
+            state.updateState(cert);
         }
     }
 };
@@ -930,7 +929,7 @@ RequestValidator.prototype.validateCertificateChain = function(entityCert, inter
 RequestValidator.prototype.validateSignature = function(request, entityCert) {
     var sig = new jsrsasign.Signature({alg: getSignatureAlgorithm(entityCert, request.pkiType)});
     sig.init(entityCert.getPublicKey());
-    sig.updateHex(getDataToSign(request).toString('hex'))
+    sig.updateHex(getDataToSign(request).toString('hex'));
     return sig.verify(Buffer.from(request.signature).toString('hex'));
 };
 
