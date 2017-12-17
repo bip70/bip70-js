@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha",
     "clean": "rm -rf build/* && find lib -name '*.js' -delete",
-    "coverage-test": "nyc --reporter=html --reporter=text mocha"
+    "coverage-test": "nyc --reporter=html --reporter=text --reporter=clover mocha"
   },
   "repository": {
     "type": "git",
