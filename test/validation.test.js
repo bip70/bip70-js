@@ -52,6 +52,25 @@ describe("GetSignatureAlgorithm", function() {
         assert.equal(sha1, "SHA1withECDSA");
         cb();
     });
+
+    it("Rejects unknown PKI types", function(cb) {
+        var mockKey = {};
+        mockKey.getPublicKey = function() {
+            return {
+                type: "ECDSA"
+            };
+        };
+
+        assert.throws(function() {
+            bip70.X509.GetSignatureAlgorithm(mockKey, "unknown")
+        }, "Unknown PKI type or no signature algorithm specified.");
+
+        assert.throws(function() {
+            bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.NONE)
+        }, "Unknown PKI type or no signature algorithm specified.");
+
+        cb();
+    });
 });
 
 describe('ChainPathBuilder', function() {
