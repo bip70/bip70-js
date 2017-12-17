@@ -53,7 +53,7 @@ describe('Protobuf', function() {
         });
     });
 
-    describe('PaymentRequest', function () {
+    describe('PaymentRequest', function() {
         it('parses a static PaymentRequest', function(cb) {
             var pkiType = "x509+sha256";
             var memo = "Payment for 1 shoes";

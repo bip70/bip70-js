@@ -1,0 +1,23 @@
+language: node_js
+
+branches:
+  only: 
+   - master
+
+node_js:
+ - '5.11'
+ - '6.3.0'
+ - '7.1.0'
+ - '8.1.0'
+ - 'node'
+
+before_install:
+ - git submodule update --init --recursive
+ - npm install -g grunt-cli
+
+script:
+ - npm run coverage-test
+ - node ./node_modules/jshint/bin/jshint main.js lib/ test/
+ - node ./node_modules/jscs/bin/jscs main.js lib/ test/
+ - grunt build
+
