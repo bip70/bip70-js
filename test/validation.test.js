@@ -62,12 +62,27 @@ describe("GetSignatureAlgorithm", function() {
         };
 
         assert.throws(function() {
-            bip70.X509.GetSignatureAlgorithm(mockKey, "unknown")
+            bip70.X509.GetSignatureAlgorithm(mockKey, "unknown");
         }, "Unknown PKI type or no signature algorithm specified.");
 
         assert.throws(function() {
-            bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.NONE)
+            bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.NONE);
         }, "Unknown PKI type or no signature algorithm specified.");
+
+        cb();
+    });
+
+    it("Rejects unknown public key type", function(cb) {
+        var mockKey = {};
+        mockKey.getPublicKey = function() {
+            return {
+                type: "wut"
+            };
+        };
+
+        assert.throws(function() {
+            bip70.X509.GetSignatureAlgorithm(mockKey, "unknown");
+        }, "Unknown public key type");
 
         cb();
     });
