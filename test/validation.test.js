@@ -1,9 +1,8 @@
 var jsrsasign = require('jsrsasign');
 var assert = require('assert');
-var bip70 = require('../../main.js');
+var bip70 = require('../main.js');
 var ChainPathValidator = bip70.X509.ChainPathValidator;
 var ChainPathBuilder = bip70.X509.ChainPathBuilder;
-var Validation = require('../../lib/x509/validation.jsrsasign');
 var certfile = require("./certfile");
 
 
@@ -26,6 +25,35 @@ function certFromEncoding(data, encoding) {
     return cert;
 }
 
+describe("GetSignatureAlgorithm", function() {
+    var entityCert = certFromEncoding(certfile.test_cert.entityCertificate, "base64");
+
+    it("Deals with RSA public keys", function(cb) {
+        var sha256 = bip70.X509.GetSignatureAlgorithm(entityCert, bip70.X509.PKIType.X509_SHA256);
+        assert.equal(sha256, "SHA256withRSA");
+
+        var sha1 = bip70.X509.GetSignatureAlgorithm(entityCert, bip70.X509.PKIType.X509_SHA1);
+        assert.equal(sha1, "SHA1withRSA");
+        cb();
+    });
+
+    it("Deals with ECDSA public keys (mocked)", function(cb) {
+        var mockKey = {};
+        mockKey.getPublicKey = function() {
+            return {
+                type: "ECDSA"
+            };
+        };
+
+        var sha256 = bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.X509_SHA256);
+        assert.equal(sha256, "SHA256withECDSA");
+
+        var sha1 = bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.X509_SHA1);
+        assert.equal(sha1, "SHA1withECDSA");
+        cb();
+    });
+});
+
 describe('ChainPathBuilder', function() {
     var fixture = certfile.test_cert;
     var entityCert = certFromEncoding(fixture.entityCertificate, "base64");
@@ -46,7 +74,9 @@ describe('ChainPathBuilder', function() {
             currentTime: chainValidTime
         }, path);
 
-        validator.validate();
+        assert.doesNotThrow(function() {
+            validator.validate();
+        }, 'no errors expected during validation');
 
         cb();
     });
