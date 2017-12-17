@@ -1,6 +1,7 @@
 var jsrsasign = require('jsrsasign');
 var assert = require('assert');
 var bip70 = require('../main.js');
+var PaymentRequest = bip70.ProtoBuf.PaymentRequest;
 var ChainPathValidator = bip70.X509.ChainPathValidator;
 var ChainPathBuilder = bip70.X509.ChainPathBuilder;
 var certfile = require("./certfile");
@@ -174,5 +175,44 @@ describe('ChainPathBuilder', function() {
     it('errors if root certificate is missing', function(cb) {
         testNoCertificationPath([], intermediates, entityCert);
         cb();
+    });
+});
+
+describe("RequestValidator", function() {
+    describe("validateSignature", function() {
+        var i = 0;
+        certfile.test_cert.requests.map(function(request) {
+            it("works with a test fixture " + i, function(cb) {
+                var time = request.time;
+                var request64 = request.request;
+                var req = PaymentRequest.decode(Buffer.from(request64, 'base64'));
+                var root = certFromEncoding(certfile.test_cert.rootCertificate, "base64");
+                var intermediates = certfile.test_cert.intermediates.map(function(cert) {
+                    return certFromEncoding(cert, "base64");
+                });
+                var entityCert = certFromEncoding(certfile.test_cert.entityCertificate, "base64");
+                var validator = new bip70.X509.RequestValidator({
+                    trustStore: [root],
+                    currentTime: time
+                });
+
+                assert.doesNotThrow(function() {
+                    validator.validateCertificateChain(entityCert, intermediates);
+                }, "should validate certificate chain");
+
+                assert.doesNotThrow(function() {
+                    validator.validateSignature(req, entityCert);
+                }, "should validate request signature");
+
+                var path = [];
+                assert.doesNotThrow(function() {
+                    path = validator.verifyX509Details(req);
+                }, "full validation should succeed");
+
+                assert.equal(path.length, 1 + intermediates.length + 1);
+                cb();
+            });
+            i++;
+        });
     });
 });
