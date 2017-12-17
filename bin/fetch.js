@@ -17,7 +17,9 @@ var client = new HttpClient(validator);
 
 client
     .getRequest(url, validator)
-    .then(function(paymentRequest) {
+    .then(function(requestData) {
+        var paymentRequest = requestData[0];
+        //var path = requestData[1];
         console.log(paymentRequest);
         var details = ProtoBuf.PaymentDetails.decode(paymentRequest.serializedPaymentDetails);
 
