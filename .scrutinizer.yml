@@ -1,3 +1,6 @@
+filter:
+    excluded_paths: [node_modules/*, build/*, test/*]
+
 build:
     dependencies:
         before:
