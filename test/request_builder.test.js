@@ -88,7 +88,6 @@ describe('RequestBuilder setters', function() {
 
         test(builder);
         test(encodeAndDecode(builder));
-        console.log("FIN")
         cb();
     });
 

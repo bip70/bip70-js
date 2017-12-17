@@ -58,11 +58,12 @@ HttpClient.prototype.getRequest = function(url, validator) {
             var buf = Buffer.from(response.data);
             var paymentRequest = PaymentRequest.decode(buf);
 
+            var path = null;
             if (paymentRequest.pkiType !== PKIType.NONE) {
-                validator.verifyX509Details(paymentRequest);
+                path = validator.verifyX509Details(paymentRequest);
             }
 
-            return paymentRequest;
+            return [paymentRequest, path];
         });
 };
 
@@ -565,7 +566,7 @@ var validation = require('./validation.jsrsasign');
 module.exports = {
     PKIType: require('./pkitype'),
     TrustStore: require('./truststore'),
-    Validation: validation,
+    GetSignatureAlgorithm: validation.GetSignatureAlgorithm,
     ChainPathBuilder: validation.ChainPathBuilder,
     ChainPathValidator: validation.ChainPathValidator,
     RequestValidator: validation.RequestValidator
@@ -585,9 +586,8 @@ module.exports = PKIType;
 var jsrsasign = require('jsrsasign');
 
 function parseCertFrom(string, encoding) {
-    var hex = Buffer.from(string, encoding).toString('hex');
     var cert = new jsrsasign.X509();
-    cert.readCertHex(hex);
+    cert.readCertHex(Buffer.from(string, encoding).toString('hex'));
     return cert;
 }
 
@@ -910,12 +910,13 @@ RequestValidator.prototype.verifyX509Details = function(paymentRequest) {
 
     var entityCert = certFromDER(x509.certificate[0]);
     var intermediates = x509.certificate.slice(1).map(certFromDER);
-
-    this.validateCertificateChain(entityCert, intermediates);
+    var path = this.validateCertificateChain(entityCert, intermediates);
 
     if (!this.validateSignature(paymentRequest, entityCert)) {
         throw new Error("Invalid signature on request");
     }
+
+    return path;
 };
 
 RequestValidator.prototype.validateCertificateChain = function(entityCert, intermediates) {
@@ -923,34 +924,14 @@ RequestValidator.prototype.validateCertificateChain = function(entityCert, inter
     var path = builder.shortestPathToTarget(entityCert, intermediates);
     var validator = new ChainPathValidator({}, path);
     validator.validate();
+    return path;
 };
 
 RequestValidator.prototype.validateSignature = function(request, entityCert) {
-    var publicKey = entityCert.getPublicKey();
-
-    var keyType;
-    if (publicKey.type === "ECDSA") {
-        keyType = "ECDSA";
-    } else if (publicKey.type === "RSA") {
-        keyType = "RSA";
-    } else {
-        throw new Error("Unknown public key type");
-    }
-
-    var hashAlg;
-    if (request.pkiType === PKIType.X509_SHA1) {
-        hashAlg = "SHA1";
-    } else if (request.pkiType === PKIType.X509_SHA256) {
-        hashAlg = "SHA256";
-    }
-
-    var dataSigned = getDataToSign(request).toString('hex');
-    var dataSignature = Buffer.from(request.signature).toString('hex');
-    var sigAlg = hashAlg + "with" + keyType;
-    var sig = new jsrsasign.Signature({alg: sigAlg});
-    sig.init(publicKey);
-    sig.updateHex(dataSigned);
-    return sig.verify(dataSignature);
+    var sig = new jsrsasign.Signature({alg: getSignatureAlgorithm(entityCert, request.pkiType)});
+    sig.init(entityCert.getPublicKey());
+    sig.updateHex(getDataToSign(request).toString('hex'))
+    return sig.verify(Buffer.from(request.signature).toString('hex'));
 };
 
 function getDataToSign(request) {
@@ -965,10 +946,35 @@ function getDataToSign(request) {
     return new Buffer(ProtoBuf.PaymentRequest.encode(request).finish());
 }
 
+function getSignatureAlgorithm(entityCert, pkiType) {
+    var publicKey = entityCert.getPublicKey();
+
+    var keyType;
+    if (publicKey.type === "ECDSA") {
+        keyType = "ECDSA";
+    } else if (publicKey.type === "RSA") {
+        keyType = "RSA";
+    } else {
+        throw new Error("Unknown public key type");
+    }
+
+    var hashAlg;
+    if (pkiType === PKIType.X509_SHA1) {
+        hashAlg = "SHA1";
+    } else if (pkiType === PKIType.X509_SHA256) {
+        hashAlg = "SHA256";
+    } else {
+        throw new Error("Unknown PKI type or no signature algorithm specified.");
+    }
+
+    return hashAlg + "with" + keyType;
+}
+
 module.exports = {
     ChainPathBuilder: ChainPathBuilder,
     ChainPathValidator: ChainPathValidator,
-    RequestValidator: RequestValidator
+    RequestValidator: RequestValidator,
+    GetSignatureAlgorithm: getSignatureAlgorithm
 };
 
 }).call(this,require("buffer").Buffer)
