@@ -214,5 +214,28 @@ describe("RequestValidator", function() {
             });
             i++;
         });
+
+        var request = certfile.test_cert.requests[0];
+        it("rejects an invalid signature", function(cb) {
+            var time = request.time;
+            var request64 = request.request;
+            var req = PaymentRequest.decode(Buffer.from(request64, 'base64'));
+            var root = certFromEncoding(certfile.test_cert.rootCertificate, "base64");
+            var entityCert = certFromEncoding(certfile.test_cert.entityCertificate, "base64");
+            var validator = new bip70.X509.RequestValidator({
+                trustStore: [root],
+                currentTime: time
+            });
+
+            req.signature = Buffer.from("dZmjw+Tg7ssFmBF3gqbHvyImTEZ6ffMYMBTAFiJs0RnpY9bPCzEILbCX6rBeagffaShqmkyn0iU3+h509Ul8rtPbR+C4c26uFJNLMXWbq7QiiIbpwCaJjtQFXipm7bgVlv+swrMTVu/K+atAsY8INUyuE/CrV53fN7P9gKFqlmlMB2MdrN/oFCx2dDWooXIjvl11hJDkae+r3bC+YCMBfe3MFCDpmF/c3+0xkFrw2R7cZLdUu+kBF3iHL0ezslxKJLtYMb1cuc5DWiGbVOZqu/+Gt3Pul3DS7Tk8QNx7ou1As0EiGWc+BKxUm63lNS/JlIUwvx6A+q0nnu7WDA28Hg==", "base64");
+            assert.ok(false === validator.validateSignature(req, entityCert));
+
+            assert.throws(function() {
+                validator.verifyX509Details(req);
+            }, "Invalid signature on request");
+
+            cb();
+        });
     });
+
 });
