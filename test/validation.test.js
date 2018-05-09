@@ -64,11 +64,11 @@ describe("GetSignatureAlgorithm", function() {
 
         assert.throws(function() {
             bip70.X509.GetSignatureAlgorithm(mockKey, "unknown");
-        }, "Unknown PKI type or no signature algorithm specified.");
+        });
 
         assert.throws(function() {
             bip70.X509.GetSignatureAlgorithm(mockKey, bip70.X509.PKIType.NONE);
-        }, "Unknown PKI type or no signature algorithm specified.");
+        });
 
         cb();
     });
@@ -83,7 +83,7 @@ describe("GetSignatureAlgorithm", function() {
 
         assert.throws(function() {
             bip70.X509.GetSignatureAlgorithm(mockKey, "unknown");
-        }, "Unknown public key type");
+        });
 
         cb();
     });
@@ -111,7 +111,7 @@ describe('ChainPathBuilder', function() {
 
         assert.doesNotThrow(function() {
             validator.validate();
-        }, 'no errors expected during validation');
+        });
 
         cb();
     });
@@ -232,7 +232,7 @@ describe("RequestValidator", function() {
 
             assert.throws(function() {
                 validator.verifyX509Details(req);
-            }, "Invalid signature on request");
+            });
 
             cb();
         });
